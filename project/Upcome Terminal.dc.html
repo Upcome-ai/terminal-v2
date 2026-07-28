@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#08080A;font-family:'Space Grotesk',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+a{color:#F5922E;text-decoration:none}a:hover{color:#F7A552}
+::selection{background:#F5922E;color:#0A0A0A}
+.upscroll::-webkit-scrollbar{width:10px}
+.upscroll::-webkit-scrollbar-thumb{background:#1C1C21;border-radius:6px;border:3px solid #08080A}
+.upscroll::-webkit-scrollbar-thumb:hover{background:#2A2A30}
+input::placeholder{color:#5C5C63}
+@keyframes upblink{0%,55%{opacity:1}56%,100%{opacity:.22}}
+@keyframes upin{0%{opacity:0;transform:translateY(-6px)}100%{opacity:1;transform:translateY(0)}}
+</style>
+</helmet>
+
+<div style="height:100vh;display:flex;flex-direction:column;background:#08080A;color:#ECECEA;overflow:hidden">
+
+  <!-- TOP BAR -->
+  <header style="display:flex;align-items:center;gap:20px;padding:0 22px;height:60px;border-bottom:1px solid #17171A;background:#0A0A0C;flex:0 0 auto">
+    <div style="display:flex;align-items:center;gap:9px;width:258px;flex:0 0 auto">
+      <img src="assets/upcome-mark.svg" alt="Upcome" style="height:24px;width:24px;display:block">
+      <span style="font-weight:600;font-size:19px;letter-spacing:-.02em">Upcome</span>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.16em;color:#5C5C63;border:1px solid #1E1E23;padding:3px 6px;border-radius:5px;margin-left:2px">TERMINAL</span>
+    </div>
+    <div style="flex:1;max-width:520px;display:flex;align-items:center;gap:10px;background:#0E0E11;border:1px solid #1E1E23;border-radius:9px;padding:10px 14px">
+      <span style="color:#5C5C63;font-size:15px">⌕</span>
+      <input value="{{ search }}" onInput="{{ onSearch }}" placeholder="Search headlines, sources, tickers…" style="flex:1;background:transparent;border:none;outline:none;color:#ECECEA;font-family:'Space Grotesk',sans-serif;font-size:14.5px" />
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#5C5C63;border:1px solid #1E1E23;padding:2px 6px;border-radius:4px">/</span>
+    </div>
+    <div style="margin-left:auto;display:flex;align-items:center;gap:18px">
+      <div style="display:flex;align-items:center;gap:8px;font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:#8A8A90">
+        <span style="width:8px;height:8px;border-radius:50%;background:#F5922E;animation:upblink 1.3s infinite"></span>LIVE
+      </div>
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:#C6C6C8;letter-spacing:.02em">{{ clock }}</div>
+      <div style="width:34px;height:34px;border-radius:8px;border:1px solid #1E1E23;display:flex;align-items:center;justify-content:center;color:#8A8A90;cursor:pointer" style-hover="border-color:#2A2A30;color:#ECECEA">⚙</div>
+    </div>
+  </header>
+
+  <!-- BODY -->
+  <div style="flex:1;display:flex;min-height:0">
+
+    <!-- SIDEBAR : SUBSCRIPTIONS -->
+    <aside class="upscroll" style="width:280px;flex:0 0 auto;border-right:1px solid #17171A;background:#0A0A0C;overflow-y:auto;padding:20px 16px">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:0 6px 12px">
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:#6E6E76">My Topics</span>
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#5C5C63">{{ subCount }} subscribed</span>
+      </div>
+
+      <sc-for list="{{ subscribed }}" as="t" hint-placeholder-count="6">
+        <div onClick="{{ t.onFilter }}" style="{{ t.rowStyle }}" style-hover="background:#101014">
+          <span style="width:7px;height:7px;border-radius:50%;flex:0 0 auto;background:#F5922E"></span>
+          <span style="flex:1;font-size:14px;color:#C9C9CC;letter-spacing:-.005em">{{ t.name }}</span>
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#6E6E76">{{ t.count }}</span>
+          <span onClick="{{ t.onToggle }}" title="Unsubscribe" style="width:22px;height:22px;border-radius:6px;display:flex;align-items:center;justify-content:center;color:#5C5C63;font-size:15px;flex:0 0 auto" style-hover="background:#1E1216;color:#F5922E">×</span>
+        </div>
+      </sc-for>
+
+      <div style="height:1px;background:#17171A;margin:18px 6px"></div>
+
+      <div style="padding:0 6px 12px">
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:#6E6E76">Discover</span>
+      </div>
+      <sc-for list="{{ discover }}" as="t" hint-placeholder-count="3">
+        <div style="display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:9px">
+          <span style="width:7px;height:7px;border-radius:50%;flex:0 0 auto;background:#2A2A30"></span>
+          <span style="flex:1;font-size:14px;color:#8A8A90;letter-spacing:-.005em">{{ t.name }}</span>
+          <span onClick="{{ t.onToggle }}" style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;font-weight:500;color:#F5922E;border:1px solid #33261A;background:#140F09;padding:5px 10px;border-radius:7px;cursor:pointer;flex:0 0 auto" style-hover="background:#1C130A">＋ Subscribe</span>
+        </div>
+      </sc-for>
+
+      <div style="margin:22px 6px 0;padding:14px 14px;border:1px solid #17171A;border-radius:11px;background:#0C0C0F">
+        <div style="font-size:13px;font-weight:600;color:#C9C9CC">Add a custom topic</div>
+        <div style="font-size:12.5px;line-height:1.45;color:#7E7E86;margin-top:5px">Track any company, ticker, industry or event in real time.</div>
+        <div style="margin-top:11px;font-family:'IBM Plex Mono',monospace;font-size:12px;color:#F5922E;cursor:pointer" style-hover="color:#F7A552">＋ New topic</div>
+      </div>
+    </aside>
+
+    <!-- FEED -->
+    <main class="upscroll" style="flex:1;min-width:0;overflow-y:auto;background:#08080A">
+      <div style="position:sticky;top:0;z-index:5;background:#08080A;border-bottom:1px solid #17171A;padding:16px 24px 0">
+        <div style="display:flex;align-items:baseline;gap:12px">
+          <h1 style="font-size:19px;font-weight:600;letter-spacing:-.01em;margin:0">Live Feed</h1>
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:#6E6E76">{{ feedCount }} updates · {{ activeLabel }}</span>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;padding:14px 0 12px">
+          <sc-for list="{{ chips }}" as="c" hint-placeholder-count="5">
+            <span onClick="{{ c.onClick }}" style="{{ c.style }}" style-hover="border-color:#33333A">{{ c.label }}</span>
+          </sc-for>
+        </div>
+      </div>
+
+      <div style="padding:16px 24px 40px;display:flex;flex-direction:column;gap:10px">
+        <sc-for list="{{ feed }}" as="item" hint-placeholder-count="8">
+          <div onClick="{{ item.onClick }}" style="{{ item.cardStyle }}" style-hover="background:#101014;border-color:#26262B">
+            <div style="display:flex;align-items:center;gap:9px;margin-bottom:9px">
+              <sc-if value="{{ item.breaking }}" hint-placeholder-val="{{ true }}">
+                <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;letter-spacing:.12em;color:#0A0A0A;background:#F5922E;padding:3px 8px;border-radius:5px">BREAKING</span>
+              </sc-if>
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#6E6E76">{{ item.time }}</span>
+              <span style="{{ item.tagStyle }}">{{ item.tag }}</span>
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:#7E7E86">{{ item.source }}</span>
+              <span style="margin-left:auto;font-size:11px;color:#C9946A;background:#140F09;border:1px solid #2A1E12;padding:3px 10px;border-radius:999px">{{ item.topicName }}</span>
+            </div>
+            <div style="{{ item.headStyle }}">{{ item.headline }}</div>
+            <sc-if value="{{ item.showSummary }}" hint-placeholder-val="{{ true }}">
+              <div style="font-size:14px;line-height:1.5;color:#8A8A90;margin-top:7px">{{ item.summary }}</div>
+            </sc-if>
+          </div>
+        </sc-for>
+        <sc-if value="{{ feedEmpty }}" hint-placeholder-val="{{ false }}">
+          <div style="text-align:center;padding:70px 20px;color:#6E6E76">
+            <div style="font-size:15px;color:#8A8A90">No updates match your filters.</div>
+            <div style="font-size:13.5px;margin-top:6px">Subscribe to more topics or clear your search.</div>
+          </div>
+        </sc-if>
+      </div>
+    </main>
+
+    <!-- DETAIL / READING PANEL -->
+    <sc-if value="{{ showDetail }}" hint-placeholder-val="{{ true }}">
+      <aside class="upscroll" style="width:384px;flex:0 0 auto;border-left:1px solid #17171A;background:#0A0A0C;overflow-y:auto">
+        <div style="padding:24px 24px 28px">
+          <div style="display:flex;align-items:center;gap:9px;margin-bottom:16px">
+            <sc-if value="{{ sel.breaking }}" hint-placeholder-val="{{ true }}">
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;letter-spacing:.12em;color:#0A0A0A;background:#F5922E;padding:3px 8px;border-radius:5px">BREAKING</span>
+            </sc-if>
+            <span style="{{ sel.tagStyle }}">{{ sel.tag }}</span>
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#6E6E76">{{ sel.time }} · {{ sel.source }}</span>
+          </div>
+          <h2 style="font-size:26px;line-height:1.2;letter-spacing:-.02em;font-weight:700;margin:0">{{ sel.headline }}</h2>
+          <span style="display:inline-block;margin-top:14px;font-size:11.5px;color:#C9946A;background:#140F09;border:1px solid #2A1E12;padding:4px 11px;border-radius:999px">{{ sel.topicName }}</span>
+
+          <p style="font-size:15px;line-height:1.62;color:#B4B4B9;margin:20px 0 0">{{ sel.long }}</p>
+
+          <div style="margin-top:22px;padding:16px 16px;border:1px solid #33261A;background:#100B06;border-radius:11px">
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:#F5922E">Why it matters</div>
+            <div style="font-size:14px;line-height:1.55;color:#CFC3B4;margin-top:8px">{{ sel.why }}</div>
+          </div>
+
+          <a href="https://mvp.upcome.ai" style="display:flex;align-items:center;justify-content:center;gap:8px;margin-top:20px;background:#F5922E;color:#0A0A0A;padding:13px;border-radius:9px;font-weight:600;font-size:14.5px">Open source ↗</a>
+
+          <div style="margin-top:26px">
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:#6E6E76;margin-bottom:12px">Corroborating sources</div>
+            <sc-for list="{{ sel.corrob }}" as="s" hint-placeholder-count="3">
+              <div style="display:flex;align-items:center;gap:11px;padding:11px 0;border-top:1px solid #15151A">
+                <span style="width:30px;height:30px;border-radius:7px;flex:0 0 auto;background:repeating-linear-gradient(135deg,#0D0D10 0 6px,#101014 6px 12px);border:1px solid #1E1E23"></span>
+                <div style="flex:1;min-width:0">
+                  <div style="font-size:13.5px;color:#C9C9CC">{{ s.name }}</div>
+                  <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#6E6E76">{{ s.meta }}</div>
+                </div>
+                <span style="color:#5C5C63;font-size:13px">↗</span>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </aside>
+    </sc-if>
+
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1440,&quot;height&quot;:900},&quot;density&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;comfortable&quot;,&quot;compact&quot;],&quot;default&quot;:&quot;comfortable&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Layout&quot;},&quot;showSummaries&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Layout&quot;},&quot;showDetail&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Layout&quot;}}">
+class Component extends DCLogic {
+  state = {
+    topics: [
+      { id: 'fed', name: 'Central Banks', sub: true },
+      { id: 'markets', name: 'Markets & Macro', sub: true },
+      { id: 'tech', name: 'Technology', sub: true },
+      { id: 'energy', name: 'Energy & Commodities', sub: true },
+      { id: 'crypto', name: 'Crypto', sub: true },
+      { id: 'geo', name: 'Geopolitics', sub: true },
+      { id: 'earnings', name: 'Earnings', sub: false },
+      { id: 'health', name: 'Healthcare', sub: false },
+      { id: 'realestate', name: 'Real Estate', sub: false },
+    ],
+    filter: 'all',
+    selectedId: 'i1',
+    search: '',
+    now: new Date(),
+  };
+
+  items = [
+    { id:'i1', topic:'fed', type:'GOV', source:'Fed newsroom', time:'12s', breaking:true,
+      headline:'Federal Reserve announces emergency policy review',
+      summary:'An unscheduled review of the current policy stance was confirmed minutes ago.',
+      long:'The Federal Reserve has confirmed an unscheduled review of its current policy stance, citing rapidly shifting conditions in funding markets. Officials say a statement will follow within hours.',
+      why:'An emergency review is rare and typically precedes an unscheduled decision — rates, liquidity and the dollar can move sharply before markets fully price it in.' },
+    { id:'i2', topic:'markets', type:'WIRE', source:'Global wire', time:'41s', breaking:false,
+      headline:'Dollar spikes as safe-haven demand surges',
+      summary:'The index jumped to session highs as traders rotated into cash.',
+      long:'The dollar index climbed to session highs as investors rotated into cash and short-dated government paper, a classic risk-off move triggered by the morning\u2019s headlines.',
+      why:'A stronger dollar pressures commodities, emerging markets and multinationals\u2019 overseas earnings — a fast, broad read on risk appetite.' },
+    { id:'i3', topic:'tech', type:'WIRE', source:'Global wire', time:'58s', breaking:true,
+      headline:'Major chipmaker halts production at flagship fab',
+      summary:'Output at the company\u2019s largest facility has been paused pending inspection.',
+      long:'A leading semiconductor manufacturer has paused output at its largest fabrication plant pending an equipment inspection, according to two people familiar with the matter.',
+      why:'Flagship fabs supply a huge share of advanced chips — any prolonged halt ripples through device makers, autos and the broader supply chain.' },
+    { id:'i4', topic:'energy', type:'WIRE', source:'Global wire', time:'1m', breaking:false,
+      headline:'Crude jumps 4% after pipeline outage reported',
+      summary:'A key transit line was taken offline, tightening near-term supply.',
+      long:'Benchmark crude rose about 4% after operators reported an unplanned outage on a key transit pipeline, tightening near-term physical supply on major routes.',
+      why:'Pipeline disruptions hit spot supply immediately, feeding into fuel prices and inflation expectations within days.' },
+    { id:'i5', topic:'fed', type:'WIRE', source:'Global wire', time:'2m', breaking:false,
+      headline:'Central bank signals surprise rate decision ahead',
+      summary:'Guidance language shifted, opening the door to an off-cycle move.',
+      long:'Updated guidance language has shifted notably, with officials leaving the door open to an off-cycle rate move if conditions deteriorate further.',
+      why:'Off-cycle moves catch positioning offside; rate-sensitive assets and the curve can reprice in minutes.' },
+    { id:'i6', topic:'crypto', type:'FILING', source:'Regulatory filing', time:'3m', breaking:false,
+      headline:'Regulator opens probe into major exchange',
+      summary:'A formal inquiry into custody practices was disclosed in a filing.',
+      long:'A financial regulator has opened a formal inquiry into the custody and reserve practices of a major digital-asset exchange, per a filing published this morning.',
+      why:'Exchange probes drive outflows and volatility across tokens as users reassess counterparty risk.' },
+    { id:'i7', topic:'geo', type:'LOCAL', source:'Local desk', time:'4m', breaking:false,
+      headline:'Port strike escalates, key shipping routes disrupted',
+      summary:'Labor action expanded to additional terminals overnight.',
+      long:'Industrial action at a major port has escalated, with additional terminals joining overnight and vessels now queuing offshore, according to local reporting.',
+      why:'Port congestion raises freight costs and delivery times, pressuring margins for import-reliant sectors.' },
+    { id:'i8', topic:'tech', type:'FILING', source:'Company filing', time:'6m', breaking:false,
+      headline:'8-K filed: CEO transition at $40B logistics firm',
+      summary:'The board named an interim chief executive effective immediately.',
+      long:'An 8-K disclosed an abrupt CEO transition at a $40B logistics company, with the board appointing an interim chief executive effective immediately.',
+      why:'Leadership shocks at large operators can move the stock and signal strategic or governance turbulence.' },
+    { id:'i9', topic:'energy', type:'CITIZEN', source:'Citizen report', time:'7m', breaking:false,
+      headline:'On-ground reports: power outage spreading across grid',
+      summary:'Multiple citizen reports describe cascading outages in the region.',
+      long:'A cluster of verified citizen reports describes cascading power outages across a regional grid, with several industrial districts confirming loss of supply.',
+      why:'Grid instability can idle production and shift energy demand, with knock-on effects for utilities and manufacturers.' },
+    { id:'i10', topic:'markets', type:'WIRE', source:'Global wire', time:'9m', breaking:false,
+      headline:'Bond yields slide as investors reprice risk',
+      summary:'Long-end yields fell as demand for safety picked up.',
+      long:'Government bond yields slid across the long end as investors repriced growth and policy risk following the morning\u2019s run of headlines.',
+      why:'Falling yields ripple into mortgages, valuations and bank margins — a core macro signal traders watch closely.' },
+    { id:'i11', topic:'geo', type:'GOV', source:'Government portal', time:'12m', breaking:false,
+      headline:'Government confirms new export restrictions',
+      summary:'Fresh curbs target a strategic category of goods.',
+      long:'A government portal has published fresh export restrictions targeting a strategic category of goods, effective on a phased timeline.',
+      why:'Export curbs redraw supply chains and can advantage or penalize specific sectors overnight.' },
+    { id:'i12', topic:'crypto', type:'WIRE', source:'Global wire', time:'15m', breaking:false,
+      headline:'Stablecoin depegs briefly amid liquidity crunch',
+      summary:'The token traded below par before partially recovering.',
+      long:'A widely held stablecoin briefly traded below par during a short liquidity crunch before partially recovering, rattling on-chain markets.',
+      why:'Stablecoin stress can freeze trading pairs and spread contagion quickly across crypto venues.' },
+  ];
+
+  componentDidMount() {
+    this._t = setInterval(() => this.setState({ now: new Date() }), 1000);
+  }
+  componentWillUnmount() { clearInterval(this._t); }
+
+  tagStyle(type) {
+    const base = "font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.05em;padding:3px 7px;border-radius:5px;flex:0 0 auto;";
+    if (type === 'GOV' || type === 'FILING') return base + "color:#F5922E;border:1px solid #33261A";
+    if (type === 'CITIZEN') return base + "color:#B8B8BC;background:#1B1B1E;border:1px solid #2A2A30";
+    return base + "color:#9A9AA0;border:1px solid #2A2A30";
+  }
+
+  toggleTopic(id) {
+    this.setState(s => {
+      const topics = s.topics.map(t => t.id === id ? { ...t, sub: !t.sub } : t);
+      const t = topics.find(x => x.id === id);
+      const filter = (!t.sub && s.filter === id) ? 'all' : s.filter;
+      return { topics, filter };
+    });
+  }
+
+  renderVals() {
+    const compact = (this.props.density ?? 'comfortable') === 'compact';
+    const showSummaries = this.props.showSummaries ?? true;
+    const showDetail = this.props.showDetail ?? true;
+    const q = this.state.search.trim().toLowerCase();
+    const topicName = id => (this.state.topics.find(t => t.id === id) || {}).name || '';
+    const subIds = this.state.topics.filter(t => t.sub).map(t => t.id);
+    const countFor = id => this.items.filter(i => i.topic === id).length;
+
+    const subscribed = this.state.topics.filter(t => t.sub).map(t => {
+      const active = this.state.filter === t.id;
+      return {
+        id: t.id, name: t.name, count: countFor(t.id),
+        rowStyle: "display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:9px;cursor:pointer;"
+          + (active ? "background:#140F09;box-shadow:inset 0 0 0 1px #33261A" : ""),
+        onFilter: () => this.setState({ filter: active ? 'all' : t.id }),
+        onToggle: (e) => { e.stopPropagation(); this.toggleTopic(t.id); },
+      };
+    });
+
+    const discover = this.state.topics.filter(t => !t.sub).map(t => ({
+      id: t.id, name: t.name,
+      onToggle: (e) => { e.stopPropagation(); this.toggleTopic(t.id); },
+    }));
+
+    const chipStyle = (active) => "cursor:pointer;font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.02em;padding:7px 13px;border-radius:999px;transition:all .12s;"
+      + (active ? "background:#F5922E;color:#0A0A0A;border:1px solid #F5922E" : "background:transparent;color:#9A9AA0;border:1px solid #23232A");
+    const chips = [{ id: 'all', label: 'All', active: this.state.filter === 'all', onClick: () => this.setState({ filter: 'all' }) }]
+      .concat(this.state.topics.filter(t => t.sub).map(t => ({
+        id: t.id, label: t.name, active: this.state.filter === t.id,
+        onClick: () => this.setState({ filter: t.id }),
+      })))
+      .map(c => ({ ...c, style: chipStyle(c.active) }));
+
+    let feedItems = this.items.filter(i => subIds.includes(i.topic));
+    if (this.state.filter !== 'all') feedItems = feedItems.filter(i => i.topic === this.state.filter);
+    if (q) feedItems = feedItems.filter(i =>
+      (i.headline + ' ' + i.summary + ' ' + i.source + ' ' + topicName(i.topic)).toLowerCase().includes(q));
+
+    const feed = feedItems.map(i => {
+      const selected = i.id === this.state.selectedId;
+      const accent = i.breaking ? '#F5922E' : (selected ? '#3A3A40' : 'transparent');
+      const pad = compact ? '12px 16px' : '17px 20px';
+      return {
+        id: i.id, time: i.time, source: i.source, tag: i.type, tagStyle: this.tagStyle(i.type),
+        topicName: topicName(i.topic), headline: i.headline, summary: i.summary, breaking: i.breaking,
+        showSummary: showSummaries && !compact,
+        headStyle: "font-size:" + (compact ? '15px' : '17px') + ";line-height:1.32;font-weight:600;color:#EDEDEC;letter-spacing:-.01em",
+        cardStyle: "padding:" + pad + ";border:1px solid " + (selected ? '#26262B' : '#17171A')
+          + ";border-left:3px solid " + accent + ";border-radius:12px;background:"
+          + (selected ? '#101014' : '#0B0B0E') + ";cursor:pointer;transition:background .14s,border-color .14s",
+        onClick: () => this.setState({ selectedId: i.id }),
+      };
+    });
+
+    const s = this.items.find(i => i.id === this.state.selectedId) || this.items[0];
+    const sel = {
+      headline: s.headline, time: s.time, source: s.source, tag: s.type, tagStyle: this.tagStyle(s.type),
+      topicName: topicName(s.topic), breaking: s.breaking, long: s.long, why: s.why,
+      corrob: [
+        { name: s.source, meta: s.type + ' · primary' },
+        { name: 'Global newswire', meta: 'WIRE · corroborated' },
+        { name: 'Regional desk', meta: 'LOCAL · monitoring' },
+      ],
+    };
+
+    const clock = this.state.now.toLocaleTimeString('en-GB', { hour12: false });
+    const activeLabel = this.state.filter === 'all' ? 'All subscribed topics' : topicName(this.state.filter);
+
+    return {
+      clock, search: this.state.search, onSearch: (e) => this.setState({ search: e.target.value }),
+      subscribed, discover, chips, feed, sel,
+      subCount: subIds.length, feedCount: feed.length, feedEmpty: feed.length === 0,
+      activeLabel, showDetail,
+    };
+  }
+}
+</script>
+</body>
+</html>

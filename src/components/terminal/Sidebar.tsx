@@ -1,0 +1,106 @@
+"use client";
+
+import type { Topic } from "@/lib/types";
+
+type SidebarProps = {
+  subscribed: Topic[];
+  discover: Topic[];
+  countFor: (id: string) => number;
+  filter: string;
+  onFilterTopic: (id: string) => void;
+  onToggleTopic: (id: string) => void;
+};
+
+export default function Sidebar({
+  subscribed,
+  discover,
+  countFor,
+  filter,
+  onFilterTopic,
+  onToggleTopic,
+}: SidebarProps) {
+  return (
+    <aside className="upscroll w-[280px] shrink-0 border-r border-[#17171A] bg-[#0A0A0C] overflow-y-auto px-4 py-5">
+      <div className="flex items-center justify-between px-[6px] pb-3">
+        <span className="font-mono text-[11px] tracking-[.16em] uppercase text-[#6E6E76]">
+          My Topics
+        </span>
+        <span className="font-mono text-[11px] text-[#5C5C63]">
+          {subscribed.length} subscribed
+        </span>
+      </div>
+
+      <div>
+        {subscribed.map((t) => {
+          const active = filter === t.id;
+          return (
+            <div
+              key={t.id}
+              onClick={() => onFilterTopic(t.id)}
+              className={`group flex items-center gap-[10px] px-[10px] py-[9px] rounded-[9px] cursor-pointer hover:bg-[#101014] ${
+                active ? "bg-[#140F09] shadow-[inset_0_0_0_1px_#33261A]" : ""
+              }`}
+            >
+              <span className="w-[7px] h-[7px] rounded-full shrink-0 bg-[#F5922E]" />
+              <span className="flex-1 text-sm text-[#C9C9CC] tracking-[-.005em]">
+                {t.name}
+              </span>
+              <span className="font-mono text-[11px] text-[#6E6E76]">
+                {countFor(t.id)}
+              </span>
+              <span
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onToggleTopic(t.id);
+                }}
+                title="Unsubscribe"
+                className="w-[22px] h-[22px] rounded-[6px] flex items-center justify-center text-[#5C5C63] text-[15px] shrink-0 hover:bg-[#1E1216] hover:text-[#F5922E]"
+              >
+                ×
+              </span>
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="h-px bg-[#17171A] my-[18px] mx-[6px]" />
+
+      <div className="px-[6px] pb-3">
+        <span className="font-mono text-[11px] tracking-[.16em] uppercase text-[#6E6E76]">
+          Discover
+        </span>
+      </div>
+      <div>
+        {discover.map((t) => (
+          <div
+            key={t.id}
+            className="flex items-center gap-[10px] px-[10px] py-[9px] rounded-[9px]"
+          >
+            <span className="w-[7px] h-[7px] rounded-full shrink-0 bg-[#2A2A30]" />
+            <span className="flex-1 text-sm text-[#8A8A90] tracking-[-.005em]">
+              {t.name}
+            </span>
+            <span
+              onClick={() => onToggleTopic(t.id)}
+              className="font-mono text-[11.5px] font-medium text-[#F5922E] border border-[#33261A] bg-[#140F09] px-[10px] py-[5px] rounded-[7px] cursor-pointer shrink-0 hover:bg-[#1C130A]"
+            >
+              ＋ Subscribe
+            </span>
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-[22px] mx-[6px] px-[14px] py-[14px] border border-[#17171A] rounded-[11px] bg-[#0C0C0F]">
+        <div className="text-[13px] font-semibold text-[#C9C9CC]">
+          Add a custom topic
+        </div>
+        <div className="text-[12.5px] leading-[1.45] text-[#7E7E86] mt-[5px]">
+          Track any company, ticker, industry or event in real time.
+        </div>
+        <div className="mt-[11px] font-mono text-[12px] text-[#F5922E] cursor-pointer hover:text-[#F7A552]">
+          ＋ New topic
+        </div>
+      </div>
+    </aside>
+  );
+}
