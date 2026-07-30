@@ -3,16 +3,14 @@
  *  API CONFIGURATION — matched to the Upcome Auth API doc.
  * ─────────────────────────────────────────────────────────────────────────────
  *
- *  ⚠️ PORT: the API doc says the backend defaults to port 7070 (overridable via
- *  the backend's PORT env var), but the integration request specified
- *  localhost:8080. We default to 8080 to honor that; change it in one place via
- *  the NEXT_PUBLIC_API_BASE_URL environment variable (see .env.example) if your
- *  instance actually listens on 7070.
+ *  The default is the hosted backend. Override it in one place via the
+ *  NEXT_PUBLIC_API_BASE_URL environment variable (see .env.example) to point at
+ *  a local instance instead.
  * ─────────────────────────────────────────────────────────────────────────────
  */
 
 export const API_BASE_URL = (
-  process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080"
+  process.env.NEXT_PUBLIC_API_BASE_URL || "https://backend.upcome.ai"
 ).replace(/\/+$/, "");
 
 /** WebSocket origin derived from the HTTP base (http→ws, https→wss). */
