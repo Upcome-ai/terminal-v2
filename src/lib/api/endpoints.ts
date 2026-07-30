@@ -120,6 +120,7 @@ export function eventToNewsItem(event: TopicEvent): NewsItem {
     id,
     topic: event.topic,
     source: event.source || "Source",
+    type: "WIRE",
     time: "0s",
     breaking: false,
     headline,

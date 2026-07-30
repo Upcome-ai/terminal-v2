@@ -1,3 +1,5 @@
+export type SourceType = "GOV" | "FILING" | "CITIZEN" | "WIRE" | "LOCAL" | (string & {});
+
 export type Topic = {
   id: string;
   name: string;
@@ -8,6 +10,8 @@ export type NewsItem = {
   id: string;
   topic: string;
   source: string;
+  /** Short source-category tag displayed on the feed card (e.g. "WIRE", "GOV", "FILING"). */
+  type: SourceType;
   time: string;
   breaking: boolean;
   headline: string;
