@@ -6,9 +6,28 @@ type TopBarProps = {
   search: string;
   onSearchChange: (value: string) => void;
   clock: string;
+  userLabel?: string;
+  onSignOut: () => void;
+  /** Connection state label (e.g. LIVE / CONNECTING / RECONNECTING / SAMPLE). */
+  connectionLabel?: string;
+  /** When true the status dot pulses orange; otherwise it's dim/static. */
+  connected?: boolean;
+  /** Whether the new-item alert sound is enabled. */
+  soundOn?: boolean;
+  onToggleSound?: () => void;
 };
 
-export default function TopBar({ search, onSearchChange, clock }: TopBarProps) {
+export default function TopBar({
+  search,
+  onSearchChange,
+  clock,
+  userLabel,
+  onSignOut,
+  connectionLabel = "LIVE",
+  connected = true,
+  soundOn = true,
+  onToggleSound,
+}: TopBarProps) {
   return (
     <header className="flex items-center gap-5 px-[22px] h-[60px] border-b border-[#17171A] bg-[#0A0A0C] shrink-0">
       <div className="flex items-center gap-[9px] w-[258px] shrink-0">
@@ -40,13 +59,50 @@ export default function TopBar({ search, onSearchChange, clock }: TopBarProps) {
 
       <div className="ml-auto flex items-center gap-[18px]">
         <div className="flex items-center gap-2 font-mono text-[12.5px] text-[#8A8A90]">
-          <span className="w-2 h-2 rounded-full bg-[#F5922E] animate-upblink" />
-          LIVE
+          <span
+            className={`w-2 h-2 rounded-full ${
+              connected ? "bg-[#F5922E] animate-upblink" : "bg-[#5C5C63]"
+            }`}
+          />
+          {connectionLabel}
         </div>
         <div className="font-mono text-[13px] text-[#C6C6C8] tracking-[.02em]">{clock}</div>
-        <div className="w-[34px] h-[34px] rounded-lg border border-[#1E1E23] flex items-center justify-center text-[#8A8A90] cursor-pointer transition-colors hover:border-[#2A2A30] hover:text-[#ECECEA]">
-          ⚙
-        </div>
+
+        {userLabel && (
+          <span
+            title={userLabel}
+            className="hidden sm:block font-mono text-[12px] text-[#8A8A90] max-w-[180px] truncate"
+          >
+            {userLabel}
+          </span>
+        )}
+
+        {onToggleSound && (
+          <button
+            type="button"
+            onClick={onToggleSound}
+            aria-pressed={soundOn}
+            aria-label={soundOn ? "Mute new-item alerts" : "Unmute new-item alerts"}
+            title={soundOn ? "Mute new-item alerts" : "Unmute new-item alerts"}
+            className={`h-[34px] w-[34px] rounded-lg border border-[#1E1E23] flex items-center justify-center text-[14px] cursor-pointer transition-colors hover:border-[#2A2A30] ${
+              soundOn ? "text-[#F5922E]" : "text-[#5C5C63] hover:text-[#ECECEA]"
+            }`}
+          >
+            <span aria-hidden className={soundOn ? undefined : "line-through"}>
+              ♪
+            </span>
+          </button>
+        )}
+
+        <button
+          type="button"
+          onClick={onSignOut}
+          title="Sign out"
+          className="h-[34px] px-[12px] rounded-lg border border-[#1E1E23] flex items-center gap-[7px] font-mono text-[12.5px] text-[#8A8A90] cursor-pointer transition-colors hover:border-[#2A2A30] hover:text-[#ECECEA]"
+        >
+          <span aria-hidden>⎋</span>
+          Sign out
+        </button>
       </div>
     </header>
   );

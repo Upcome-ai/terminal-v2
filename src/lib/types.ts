@@ -1,5 +1,3 @@
-export type SourceType = "GOV" | "WIRE" | "LOCAL" | "CITIZEN" | "FILING";
-
 export type Topic = {
   id: string;
   name: string;
@@ -9,7 +7,6 @@ export type Topic = {
 export type NewsItem = {
   id: string;
   topic: string;
-  type: SourceType;
   source: string;
   time: string;
   breaking: boolean;
@@ -17,4 +14,8 @@ export type NewsItem = {
   summary: string;
   long: string;
   why: string;
+  /** Link to the underlying article/post/filing (the event's `more-info`). */
+  url?: string;
+  /** Epoch ms the item was received; used to render a live relative time. */
+  receivedAt?: number;
 };
