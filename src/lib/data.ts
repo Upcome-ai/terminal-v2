@@ -16,7 +16,6 @@ export const items: NewsItem[] = [
   {
     id: "i1",
     topic: "fed",
-    type: "GOV",
     source: "Fed newsroom",
     time: "12s",
     breaking: true,
@@ -29,7 +28,6 @@ export const items: NewsItem[] = [
   {
     id: "i2",
     topic: "markets",
-    type: "WIRE",
     source: "Global wire",
     time: "41s",
     breaking: false,
@@ -41,7 +39,6 @@ export const items: NewsItem[] = [
   {
     id: "i3",
     topic: "tech",
-    type: "WIRE",
     source: "Global wire",
     time: "58s",
     breaking: true,
@@ -54,7 +51,6 @@ export const items: NewsItem[] = [
   {
     id: "i4",
     topic: "energy",
-    type: "WIRE",
     source: "Global wire",
     time: "1m",
     breaking: false,
@@ -66,7 +62,6 @@ export const items: NewsItem[] = [
   {
     id: "i5",
     topic: "fed",
-    type: "WIRE",
     source: "Global wire",
     time: "2m",
     breaking: false,
@@ -78,7 +73,6 @@ export const items: NewsItem[] = [
   {
     id: "i6",
     topic: "crypto",
-    type: "FILING",
     source: "Regulatory filing",
     time: "3m",
     breaking: false,
@@ -90,7 +84,6 @@ export const items: NewsItem[] = [
   {
     id: "i7",
     topic: "geo",
-    type: "LOCAL",
     source: "Local desk",
     time: "4m",
     breaking: false,
@@ -102,7 +95,6 @@ export const items: NewsItem[] = [
   {
     id: "i8",
     topic: "tech",
-    type: "FILING",
     source: "Company filing",
     time: "6m",
     breaking: false,
@@ -114,7 +106,6 @@ export const items: NewsItem[] = [
   {
     id: "i9",
     topic: "energy",
-    type: "CITIZEN",
     source: "Citizen report",
     time: "7m",
     breaking: false,
@@ -126,7 +117,6 @@ export const items: NewsItem[] = [
   {
     id: "i10",
     topic: "markets",
-    type: "WIRE",
     source: "Global wire",
     time: "9m",
     breaking: false,
@@ -138,7 +128,6 @@ export const items: NewsItem[] = [
   {
     id: "i11",
     topic: "geo",
-    type: "GOV",
     source: "Government portal",
     time: "12m",
     breaking: false,
@@ -150,7 +139,6 @@ export const items: NewsItem[] = [
   {
     id: "i12",
     topic: "crypto",
-    type: "WIRE",
     source: "Global wire",
     time: "15m",
     breaking: false,
