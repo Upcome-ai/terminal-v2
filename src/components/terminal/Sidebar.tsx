@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { Topic } from "@/lib/types";
+import CommunityLinks from "@/components/common/CommunityLinks";
 
 type SidebarProps = {
   subscribed: Topic[];
@@ -164,6 +165,8 @@ export default function Sidebar({
           </div>
         )}
       </div>
+
+      <CommunityLinks className="mt-[22px] mx-[6px]" heading="Community" />
     </aside>
   );
 }

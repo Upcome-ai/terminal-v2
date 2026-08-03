@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/lib/auth/AuthContext";
 import { ApiError } from "@/lib/api/client";
 import AuthSplash from "@/components/auth/AuthSplash";
+import CommunityLinks from "@/components/common/CommunityLinks";
 
 const RESEND_COOLDOWN_SECONDS = 30;
 const CODE_LENGTH = 6;
@@ -219,6 +220,8 @@ function LoginForm() {
           Your session is kept only for this browser tab and ends automatically
           when your access token expires.
         </p>
+
+        <CommunityLinks className="mt-[18px]" />
       </div>
     </div>
   );
