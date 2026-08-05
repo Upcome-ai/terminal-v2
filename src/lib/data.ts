@@ -1,5 +1,22 @@
 import type { NewsItem, Topic } from "./types";
 
+/**
+ * The always-on default topic. Every user is subscribed to it on their first
+ * login, and if they ever unsubscribe it remains available in Discover so they
+ * can add it back at any time.
+ */
+export const GLOBAL_NEWS_TOPIC_NAME = "Global News";
+
+/** Case-insensitive check for whether a topic id/name is the Global News default. */
+export function isGlobalNews(value: string): boolean {
+  return value.trim().toLowerCase() === GLOBAL_NEWS_TOPIC_NAME.toLowerCase();
+}
+
+/** A fresh Global News topic in its canonical (subscribed) form. */
+export function globalNewsTopic(): Topic {
+  return { id: GLOBAL_NEWS_TOPIC_NAME, name: GLOBAL_NEWS_TOPIC_NAME, sub: true };
+}
+
 export const initialTopics: Topic[] = [
   { id: "fed", name: "Central Banks", sub: true },
   { id: "markets", name: "Markets & Macro", sub: true },
