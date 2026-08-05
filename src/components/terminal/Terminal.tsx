@@ -7,7 +7,13 @@ import {
   useState,
   useSyncExternalStore,
 } from "react";
-import { initialTopics, items as mockItems } from "@/lib/data";
+import {
+  GLOBAL_NEWS_TOPIC_NAME,
+  globalNewsTopic,
+  initialTopics,
+  isGlobalNews,
+  items as mockItems,
+} from "@/lib/data";
 import type { NewsItem, Topic } from "@/lib/types";
 import { addInterest, fetchInterests } from "@/lib/api/endpoints";
 import { openEventStream, type StreamStatus } from "@/lib/api/events";
@@ -52,7 +58,23 @@ export default function Terminal() {
   const loadData = useCallback(async () => {
     try {
       const res = await fetchInterests();
-      setTopics(toTopics(res.interests));
+      let interests = res.interests;
+      // Guarantee the Global News default. On a first login the interest set
+      // lacks it, so subscribe the user — persisted server-side so its events
+      // actually stream. (Once persisted it's returned on every later login,
+      // so this only ever fires once per user.)
+      if (!interests.some(isGlobalNews)) {
+        try {
+          const added = await addInterest(GLOBAL_NEWS_TOPIC_NAME);
+          interests = added.interests.some(isGlobalNews)
+            ? added.interests
+            : [GLOBAL_NEWS_TOPIC_NAME, ...interests];
+        } catch {
+          // If persisting fails, still surface it locally for this session.
+          interests = [GLOBAL_NEWS_TOPIC_NAME, ...interests];
+        }
+      }
+      setTopics(toTopics(interests));
       setWsPath(res.websocketPath);
       setItems([]);
       setUsingMock(false);
@@ -61,7 +83,7 @@ export default function Terminal() {
       // A 401 is handled globally (redirect to login) by the API client. For
       // other failures, optionally fall back to bundled sample data.
       if (USE_MOCK_FALLBACK) {
-        setTopics(initialTopics);
+        setTopics([globalNewsTopic(), ...initialTopics]);
         setItems(mockItems);
         setWsPath("");
         setUsingMock(true);
@@ -161,7 +183,10 @@ export default function Terminal() {
             setFilter(existing.id);
             return prev;
           }
-          const id = name.toUpperCase();
+          // Keep the Global News default in its canonical form; other custom
+          // topics are upper-cased for display in mock mode.
+          const canonical = isGlobalNews(name);
+          const id = canonical ? GLOBAL_NEWS_TOPIC_NAME : name.toUpperCase();
           setFilter(id);
           return [{ id, name: id, sub: true }, ...prev];
         });
@@ -188,6 +213,25 @@ export default function Terminal() {
 
   const subscribed = topics; // every interest is, by definition, subscribed
   const subIds = useMemo(() => subscribed.map((t) => t.id), [subscribed]);
+
+  // Global News is always available: while unsubscribed it stays in Discover so
+  // it can be added back at any time.
+  const discover = useMemo(
+    () => (subscribed.some((t) => isGlobalNews(t.id)) ? [] : [globalNewsTopic()]),
+    [subscribed]
+  );
+
+  // Unsubscribe when already subscribed; otherwise (re)subscribe from Discover.
+  const toggleTopic = useCallback(
+    (id: string) => {
+      if (topics.some((t) => t.id === id)) {
+        removeTopic(id);
+      } else if (isGlobalNews(id)) {
+        addTopic(GLOBAL_NEWS_TOPIC_NAME);
+      }
+    },
+    [topics, removeTopic, addTopic]
+  );
 
   const chips = [
     { id: "all", label: "All", active: filter === "all" },
@@ -287,11 +331,11 @@ export default function Terminal() {
       <div className="flex-1 flex min-h-0">
         <Sidebar
           subscribed={subscribed}
-          discover={[]}
+          discover={discover}
           countFor={countFor}
           filter={filter}
           onFilterTopic={(id) => setFilter((f) => (f === id ? "all" : id))}
-          onToggleTopic={removeTopic}
+          onToggleTopic={toggleTopic}
           onAddTopic={addTopic}
         />
 
