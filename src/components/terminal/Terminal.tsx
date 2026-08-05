@@ -9,6 +9,7 @@ import {
 } from "react";
 import {
   GLOBAL_NEWS_TOPIC_NAME,
+  discoverTopics,
   globalNewsTopic,
   initialTopics,
   isGlobalNews,
@@ -214,23 +215,31 @@ export default function Terminal() {
   const subscribed = topics; // every interest is, by definition, subscribed
   const subIds = useMemo(() => subscribed.map((t) => t.id), [subscribed]);
 
-  // Global News is always available: while unsubscribed it stays in Discover so
-  // it can be added back at any time.
-  const discover = useMemo(
-    () => (subscribed.some((t) => isGlobalNews(t.id)) ? [] : [globalNewsTopic()]),
-    [subscribed]
-  );
+  // Discover offers topics the user isn't subscribed to yet: the Global News
+  // default (while unsubscribed) plus a curated set. Anything already in "My
+  // Topics" is filtered out (case-insensitively, since names are the key).
+  const discover = useMemo(() => {
+    const subNames = new Set(subscribed.map((t) => t.name.toLowerCase()));
+    const list: Topic[] = [];
+    if (!subscribed.some((t) => isGlobalNews(t.id))) list.push(globalNewsTopic());
+    for (const t of discoverTopics) {
+      if (!subNames.has(t.name.toLowerCase())) list.push(t);
+    }
+    return list;
+  }, [subscribed]);
 
-  // Unsubscribe when already subscribed; otherwise (re)subscribe from Discover.
+  // Unsubscribe when already subscribed; otherwise subscribe from Discover,
+  // persisting the topic's display name (the interests API keys topics by name).
   const toggleTopic = useCallback(
     (id: string) => {
       if (topics.some((t) => t.id === id)) {
         removeTopic(id);
-      } else if (isGlobalNews(id)) {
-        addTopic(GLOBAL_NEWS_TOPIC_NAME);
+        return;
       }
+      const fromDiscover = discover.find((t) => t.id === id);
+      addTopic(fromDiscover?.name ?? id);
     },
-    [topics, removeTopic, addTopic]
+    [topics, discover, removeTopic, addTopic]
   );
 
   const chips = [

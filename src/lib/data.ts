@@ -29,6 +29,16 @@ export const initialTopics: Topic[] = [
   { id: "realestate", name: "Real Estate", sub: false },
 ];
 
+/**
+ * Curated topics surfaced in Discover for any user to subscribe to. Each id is
+ * the topic's human-readable name so subscribing persists it verbatim via the
+ * interests API (which keys topics by name).
+ */
+export const discoverTopics: Topic[] = [
+  { id: "USA Iran War", name: "USA Iran War", sub: false },
+  { id: "Strait of Hormuz", name: "Strait of Hormuz", sub: false },
+];
+
 export const items: NewsItem[] = [
   {
     id: "i1",
