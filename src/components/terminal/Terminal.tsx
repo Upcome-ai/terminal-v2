@@ -8,17 +8,19 @@ import {
   useSyncExternalStore,
 } from "react";
 import {
-  GLOBAL_NEWS_TOPIC_NAME,
+  GLOBAL_NEWS_TOPIC,
   discoverTopics,
   globalNewsTopic,
   initialTopics,
   isGlobalNews,
   items as mockItems,
+  topicLabel,
 } from "@/lib/data";
 import type { NewsItem, Topic } from "@/lib/types";
 import { addInterest, fetchInterests, removeInterest } from "@/lib/api/endpoints";
 import { openEventStream, type StreamStatus } from "@/lib/api/events";
-import { USE_MOCK_FALLBACK } from "@/lib/api/config";
+import { ApiError } from "@/lib/api/client";
+import { USE_MOCK_FALLBACK, normalizeTopic } from "@/lib/api/config";
 import { formatRelativeTime } from "@/lib/time";
 import {
   getSoundEnabledDefault,
@@ -38,8 +40,13 @@ type LoadState = "loading" | "ready" | "error";
 /** Cap on how many live items we retain in memory. */
 const MAX_FEED_ITEMS = 300;
 
+/** Interests from the API become topics keyed by the API's own string — that
+ *  exact id is what add/remove send back, so it always matches a stored one. */
 const toTopics = (interests: string[]): Topic[] =>
-  interests.map((name) => ({ id: name, name, sub: true }));
+  interests.map((topic) => ({ id: topic, name: topicLabel(topic), sub: true }));
+
+const failureMessage = (error: unknown, fallback: string): string =>
+  error instanceof ApiError ? error.message : fallback;
 
 export default function Terminal() {
   const { user, logout } = useAuth();
@@ -50,6 +57,8 @@ export default function Terminal() {
   const [loadState, setLoadState] = useState<LoadState>("loading");
   const [usingMock, setUsingMock] = useState(false);
   const [streamStatus, setStreamStatus] = useState<StreamStatus>("connecting");
+  /** Transient banner for a failed subscribe/unsubscribe. */
+  const [notice, setNotice] = useState<string | null>(null);
 
   const [filter, setFilter] = useState("all");
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -66,13 +75,12 @@ export default function Terminal() {
       // so this only ever fires once per user.)
       if (!interests.some(isGlobalNews)) {
         try {
-          const added = await addInterest(GLOBAL_NEWS_TOPIC_NAME);
-          interests = added.interests.some(isGlobalNews)
-            ? added.interests
-            : [GLOBAL_NEWS_TOPIC_NAME, ...interests];
+          const added = await addInterest(GLOBAL_NEWS_TOPIC);
+          if (added.interests.length) interests = added.interests;
         } catch {
-          // If persisting fails, still surface it locally for this session.
-          interests = [GLOBAL_NEWS_TOPIC_NAME, ...interests];
+          // Never fake it into the list on failure: a topic the server doesn't
+          // have streams nothing and can't be unsubscribed (the DELETE 400s).
+          // It stays in Discover, so the user can retry with Subscribe.
         }
       }
       setTopics(toTopics(interests));
@@ -175,31 +183,42 @@ export default function Terminal() {
       const name = rawName.trim();
       if (!name) return;
 
+      // The API sees the normalized form, so validate that rather than the
+      // raw text: input made only of rejected characters normalizes away.
+      const topic = normalizeTopic(name);
+      if (!topic) {
+        setNotice(
+          `"${name}" isn't a usable topic — use letters, numbers, . _ or -`
+        );
+        return;
+      }
+
       if (usingMock) {
         setTopics((prev) => {
-          const existing = prev.find(
-            (t) => t.name.toLowerCase() === name.toLowerCase()
-          );
+          const existing = prev.find((t) => t.id === topic);
           if (existing) {
             setFilter(existing.id);
             return prev;
           }
-          // Keep the Global News default in its canonical form; other custom
-          // topics are upper-cased for display in mock mode.
-          const canonical = isGlobalNews(name);
-          const id = canonical ? GLOBAL_NEWS_TOPIC_NAME : name.toUpperCase();
-          setFilter(id);
-          return [{ id, name: id, sub: true }, ...prev];
+          setFilter(topic);
+          return [{ id: topic, name: topicLabel(topic), sub: true }, ...prev];
         });
         return;
       }
 
       try {
-        const res = await addInterest(name);
-        setTopics(toTopics(res.interests));
+        const res = await addInterest(topic);
+        if (res.interests.length) setTopics(toTopics(res.interests));
         if (res.topic) setFilter(res.topic);
-      } catch {
+        setNotice(null);
+      } catch (error) {
         // 401s are handled globally; other errors leave the list unchanged.
+        setNotice(
+          `Couldn't subscribe to ${topicLabel(topic)} — ${failureMessage(
+            error,
+            "the request failed"
+          )}`
+        );
       }
     },
     [usingMock]
@@ -220,8 +239,15 @@ export default function Terminal() {
         const res = await removeInterest(id);
         setTopics(toTopics(res.interests));
         setFilter((f) => (f === id ? "all" : f));
-      } catch {
+        setNotice(null);
+      } catch (error) {
         // 401s are handled globally; other errors leave the list unchanged.
+        setNotice(
+          `Couldn't unsubscribe from ${topicLabel(id)} — ${failureMessage(
+            error,
+            "the request failed"
+          )}`
+        );
       }
     },
     [usingMock]
@@ -232,29 +258,29 @@ export default function Terminal() {
 
   // Discover offers topics the user isn't subscribed to yet: the Global News
   // default (while unsubscribed) plus a curated set. Anything already in "My
-  // Topics" is filtered out (case-insensitively, since names are the key).
+  // Topics" is filtered out, compared in the API's topic format so a stored
+  // interest matches its curated counterpart whatever its spelling.
   const discover = useMemo(() => {
-    const subNames = new Set(subscribed.map((t) => t.name.toLowerCase()));
+    const subKeys = new Set(subscribed.map((t) => normalizeTopic(t.id)));
     const list: Topic[] = [];
     if (!subscribed.some((t) => isGlobalNews(t.id))) list.push(globalNewsTopic());
     for (const t of discoverTopics) {
-      if (!subNames.has(t.name.toLowerCase())) list.push(t);
+      if (!subKeys.has(normalizeTopic(t.id))) list.push(t);
     }
     return list;
   }, [subscribed]);
 
   // Unsubscribe when already subscribed; otherwise subscribe from Discover,
-  // persisting the topic's display name (the interests API keys topics by name).
+  // sending the topic id (already in the interests API's format), not the label.
   const toggleTopic = useCallback(
     (id: string) => {
       if (topics.some((t) => t.id === id)) {
         removeTopic(id);
         return;
       }
-      const fromDiscover = discover.find((t) => t.id === id);
-      addTopic(fromDiscover?.name ?? id);
+      addTopic(id);
     },
-    [topics, discover, removeTopic, addTopic]
+    [topics, removeTopic, addTopic]
   );
 
   const chips = [
@@ -349,6 +375,21 @@ export default function Terminal() {
         <div className="shrink-0 flex items-center gap-2 px-[22px] py-[7px] bg-[#1A0F09] border-b border-[#3A2415] font-mono text-[11.5px] text-[#F5A05A]">
           <span className="w-[6px] h-[6px] rounded-full bg-[#F5A05A]" />
           OFFLINE — showing bundled sample data (backend unreachable)
+        </div>
+      )}
+
+      {notice && (
+        <div className="shrink-0 flex items-center gap-2 px-[22px] py-[7px] bg-[#1A0F09] border-b border-[#3A2415] font-mono text-[11.5px] text-[#F5A05A]">
+          <span className="w-[6px] h-[6px] rounded-full bg-[#F5A05A]" />
+          <span className="flex-1">{notice}</span>
+          <button
+            type="button"
+            onClick={() => setNotice(null)}
+            className="text-[#F5A05A] hover:text-[#ECECEA] cursor-pointer"
+            aria-label="Dismiss"
+          >
+            ×
+          </button>
         </div>
       )}
 

@@ -1,20 +1,41 @@
+import { normalizeTopic } from "./api/config";
 import type { NewsItem, Topic } from "./types";
 
 /**
  * The always-on default topic. Every user is subscribed to it on their first
  * login, and if they ever unsubscribe it remains available in Discover so they
  * can add it back at any time.
+ *
+ * Topic ids are in the interests API's own format (uppercase, no spaces) —
+ * that is the string sent to the API, so the display label lives separately in
+ * TOPIC_LABELS.
  */
-export const GLOBAL_NEWS_TOPIC_NAME = "Global News";
+export const GLOBAL_NEWS_TOPIC = "GLOBAL_NEWS";
 
-/** Case-insensitive check for whether a topic id/name is the Global News default. */
+/** Display labels for topic ids that don't read well as-is. */
+const TOPIC_LABELS: Record<string, string> = {
+  [GLOBAL_NEWS_TOPIC]: "Global News",
+  USA_IRAN_WAR: "USA Iran War",
+  STRAIT_OF_HORMUZ: "Strait of Hormuz",
+};
+
+/** How a topic id is shown in the UI. */
+export function topicLabel(topic: string): string {
+  return TOPIC_LABELS[normalizeTopic(topic)] ?? topic.replace(/_/g, " ");
+}
+
+/** Whether a topic id/name is the Global News default, in any spelling. */
 export function isGlobalNews(value: string): boolean {
-  return value.trim().toLowerCase() === GLOBAL_NEWS_TOPIC_NAME.toLowerCase();
+  return normalizeTopic(value) === GLOBAL_NEWS_TOPIC;
 }
 
 /** A fresh Global News topic in its canonical (subscribed) form. */
 export function globalNewsTopic(): Topic {
-  return { id: GLOBAL_NEWS_TOPIC_NAME, name: GLOBAL_NEWS_TOPIC_NAME, sub: true };
+  return {
+    id: GLOBAL_NEWS_TOPIC,
+    name: topicLabel(GLOBAL_NEWS_TOPIC),
+    sub: true,
+  };
 }
 
 export const initialTopics: Topic[] = [
@@ -30,14 +51,12 @@ export const initialTopics: Topic[] = [
 ];
 
 /**
- * Curated topics surfaced in Discover for any user to subscribe to. Each id is
- * the topic's human-readable name so subscribing persists it verbatim via the
- * interests API (which keys topics by name).
+ * Curated topics surfaced in Discover for any user to subscribe to. Ids are in
+ * the interests API's format; `topicLabel` supplies the readable name.
  */
-export const discoverTopics: Topic[] = [
-  { id: "USA Iran War", name: "USA Iran War", sub: false },
-  { id: "Strait of Hormuz", name: "Strait of Hormuz", sub: false },
-];
+export const discoverTopics: Topic[] = ["USA_IRAN_WAR", "STRAIT_OF_HORMUZ"].map(
+  (id) => ({ id, name: topicLabel(id), sub: false })
+);
 
 export const items: NewsItem[] = [
   {

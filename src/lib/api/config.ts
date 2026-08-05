@@ -29,6 +29,34 @@ export const EMAIL_FIELD = "email";
 export const CODE_FIELD = "code";
 export const TOPIC_FIELD = "topic";
 
+/** Longest topic the interests API accepts. */
+const TOPIC_MAX_LENGTH = 50;
+
+/** Anything outside the API's allowed topic character set (whitespace is
+ *  handled separately, below, since it turns into a separator). */
+const TOPIC_DISALLOWED = /[^A-Z0-9._\-\s]/g;
+
+/**
+ * Coerce free-form text into a topic the interests API accepts: uppercase,
+ * limited to letters, numbers, `.`, `_` and `-`, and at most 50 characters.
+ *
+ * Multi-word names are the reason this exists — a space is not in the allowed
+ * set, so sending "Global News" verbatim is rejected with `400 Bad Request`
+ * ("the topic is missing or invalid"). Spaces become underscores instead, so
+ * the topic round-trips through add *and* remove.
+ *
+ * Applied to topics we send on the way in; topics the API hands back are
+ * already canonical and are echoed back verbatim when removing.
+ */
+export function normalizeTopic(raw: string): string {
+  return raw
+    .toUpperCase()
+    .replace(TOPIC_DISALLOWED, "")
+    .trim()
+    .replace(/\s+/g, "_")
+    .slice(0, TOPIC_MAX_LENGTH);
+}
+
 /** Default query-parameter name for the WebSocket JWT (the API also echoes this
  *  back as `websocketTokenQueryParameter` on POST /user/interests). */
 export const WS_TOKEN_PARAM = "sessionToken";

@@ -12,6 +12,7 @@ import {
   ENDPOINTS,
   TOPIC_FIELD,
   extractToken,
+  normalizeTopic,
 } from "./config";
 import { ApiError, apiFetch } from "./client";
 
@@ -70,16 +71,28 @@ export async function fetchInterests(): Promise<InterestsResponse> {
   return mapInterests(response);
 }
 
-/** `POST /user/interests` — add a topic. Returns the updated interest set. */
+/**
+ * `POST /user/interests` — add a topic. Returns the updated interest set.
+ *
+ * The topic is normalized to the API's accepted character set first, so a
+ * free-form name ("Global News") is stored in a form that can also be removed
+ * later rather than rejected with a 400.
+ */
 export async function addInterest(topic: string): Promise<InterestsResponse> {
   const response = await apiFetch<Record<string, unknown>>(ENDPOINTS.interests, {
     method: "POST",
-    body: { [TOPIC_FIELD]: topic },
+    body: { [TOPIC_FIELD]: normalizeTopic(topic) },
   });
   return mapInterests(response);
 }
 
-/** `DELETE /user/interests` — remove a topic. Returns the updated interest set. */
+/**
+ * `DELETE /user/interests` — remove a topic. Returns the updated interest set.
+ *
+ * Callers pass a topic the API itself returned, so it is sent verbatim: that
+ * string is by definition one of the stored interests, and re-normalizing it
+ * could turn it into one the user doesn't have.
+ */
 export async function removeInterest(topic: string): Promise<InterestsResponse> {
   const response = await apiFetch<Record<string, unknown>>(ENDPOINTS.interests, {
     method: "DELETE",
