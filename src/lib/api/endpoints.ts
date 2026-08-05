@@ -55,9 +55,11 @@ export type InterestsResponse = {
   websocketPath: string;
   /** Query-param name for the WS token; present on the POST response. */
   websocketTokenQueryParameter?: string;
-  /** The normalized topic that was just added (present on the POST response). */
+  /** The normalized topic that was just added/removed (present on POST/DELETE). */
   topic?: string;
   added?: boolean;
+  /** Whether the topic was removed (present on the DELETE response). */
+  removed?: boolean;
 };
 
 /** `GET /user/interests` — the user's topics and their WebSocket path. */
@@ -77,9 +79,14 @@ export async function addInterest(topic: string): Promise<InterestsResponse> {
   return mapInterests(response);
 }
 
-// NOTE: the API doc exposes no endpoint to remove an interest, so unsubscribing
-// is handled locally in the UI only (it reappears on reload). If a delete
-// endpoint is added later, wire it here.
+/** `DELETE /user/interests` — remove a topic. Returns the updated interest set. */
+export async function removeInterest(topic: string): Promise<InterestsResponse> {
+  const response = await apiFetch<Record<string, unknown>>(ENDPOINTS.interests, {
+    method: "DELETE",
+    body: { [TOPIC_FIELD]: topic },
+  });
+  return mapInterests(response);
+}
 
 /* ─────────────────────────────── mappers ───────────────────────────── */
 
@@ -96,6 +103,7 @@ function mapInterests(raw: Record<string, unknown>): InterestsResponse {
         : undefined,
     topic: typeof raw.topic === "string" ? raw.topic : undefined,
     added: typeof raw.added === "boolean" ? raw.added : undefined,
+    removed: typeof raw.removed === "boolean" ? raw.removed : undefined,
   };
 }
 
