@@ -6,6 +6,7 @@
  */
 
 import type { NewsItem } from "@/lib/types";
+import { normalizeTopic } from "@/lib/data";
 import {
   CODE_FIELD,
   EMAIL_FIELD,
@@ -72,14 +73,19 @@ export async function fetchInterests(): Promise<InterestsResponse> {
 export async function addInterest(topic: string): Promise<InterestsResponse> {
   const response = await apiFetch<Record<string, unknown>>(ENDPOINTS.interests, {
     method: "POST",
-    body: { [TOPIC_FIELD]: topic },
+    body: { [TOPIC_FIELD]: normalizeTopic(topic) },
   });
   return mapInterests(response);
 }
 
-// NOTE: the API doc exposes no endpoint to remove an interest, so unsubscribing
-// is handled locally in the UI only (it reappears on reload). If a delete
-// endpoint is added later, wire it here.
+/** `DELETE /user/interests` — remove a topic. Returns the updated interest set. */
+export async function removeInterest(topic: string): Promise<InterestsResponse> {
+  const response = await apiFetch<Record<string, unknown>>(ENDPOINTS.interests, {
+    method: "DELETE",
+    body: { [TOPIC_FIELD]: normalizeTopic(topic) },
+  });
+  return mapInterests(response);
+}
 
 /* ─────────────────────────────── mappers ───────────────────────────── */
 

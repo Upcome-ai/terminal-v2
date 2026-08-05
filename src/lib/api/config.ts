@@ -21,7 +21,7 @@ export const ENDPOINTS = {
   // Passwordless email-code login, two steps:
   requestCode: "/auth/login-code", // POST { email }        → 202, emails a code
   createSession: "/auth/session", // POST { email, code }  → 200 { jwt, tokenType }
-  interests: "/user/interests", // GET → interests + websocketPath; POST { topic } to add
+  interests: "/user/interests", // GET → interests + websocketPath; POST/DELETE { topic } to add/remove
 } as const;
 
 /** Request-body field names. */

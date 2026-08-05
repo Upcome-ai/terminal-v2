@@ -10,13 +10,14 @@ import {
 import {
   GLOBAL_NEWS_TOPIC_NAME,
   discoverTopics,
+  displayNameForTopic,
   globalNewsTopic,
   initialTopics,
   isGlobalNews,
   items as mockItems,
 } from "@/lib/data";
 import type { NewsItem, Topic } from "@/lib/types";
-import { addInterest, fetchInterests } from "@/lib/api/endpoints";
+import { addInterest, fetchInterests, removeInterest } from "@/lib/api/endpoints";
 import { openEventStream, type StreamStatus } from "@/lib/api/events";
 import { USE_MOCK_FALLBACK } from "@/lib/api/config";
 import { formatRelativeTime } from "@/lib/time";
@@ -39,7 +40,7 @@ type LoadState = "loading" | "ready" | "error";
 const MAX_FEED_ITEMS = 300;
 
 const toTopics = (interests: string[]): Topic[] =>
-  interests.map((name) => ({ id: name, name, sub: true }));
+  interests.map((id) => ({ id, name: displayNameForTopic(id), sub: true }));
 
 export default function Terminal() {
   const { user, logout } = useAuth();
@@ -205,12 +206,24 @@ export default function Terminal() {
     [usingMock]
   );
 
-  // Remove a topic. The API has no unsubscribe endpoint, so this is a
-  // session-local hide (the topic returns on reload).
-  const removeTopic = useCallback((id: string) => {
-    setTopics((prev) => prev.filter((t) => t.id !== id));
-    setFilter((f) => (f === id ? "all" : f));
-  }, []);
+  // Remove a topic. Optimistically drop it from the UI for responsiveness, then
+  // persist via DELETE /user/interests and resync from the server's response.
+  // In mock mode this stays a session-local hide.
+  const removeTopic = useCallback(
+    async (id: string) => {
+      setTopics((prev) => prev.filter((t) => t.id !== id));
+      setFilter((f) => (f === id ? "all" : f));
+      if (usingMock) return;
+      try {
+        const res = await removeInterest(id);
+        setTopics(toTopics(res.interests));
+      } catch {
+        // 401s are handled globally; on other failures the optimistic removal
+        // stands (the topic returns on the next reload).
+      }
+    },
+    [usingMock]
+  );
 
   const subscribed = topics; // every interest is, by definition, subscribed
   const subIds = useMemo(() => subscribed.map((t) => t.id), [subscribed]);
@@ -219,11 +232,17 @@ export default function Terminal() {
   // default (while unsubscribed) plus a curated set. Anything already in "My
   // Topics" is filtered out (case-insensitively, since names are the key).
   const discover = useMemo(() => {
-    const subNames = new Set(subscribed.map((t) => t.name.toLowerCase()));
+    const subKeys = new Set<string>();
+    for (const t of subscribed) {
+      subKeys.add(t.id.toLowerCase());
+      subKeys.add(t.name.toLowerCase());
+    }
     const list: Topic[] = [];
     if (!subscribed.some((t) => isGlobalNews(t.id))) list.push(globalNewsTopic());
     for (const t of discoverTopics) {
-      if (!subNames.has(t.name.toLowerCase())) list.push(t);
+      if (!subKeys.has(t.id.toLowerCase()) && !subKeys.has(t.name.toLowerCase())) {
+        list.push(t);
+      }
     }
     return list;
   }, [subscribed]);

@@ -7,9 +7,35 @@ import type { NewsItem, Topic } from "./types";
  */
 export const GLOBAL_NEWS_TOPIC_NAME = "Global News";
 
-/** Case-insensitive check for whether a topic id/name is the Global News default. */
+/**
+ * Normalize a topic to the backend's accepted form so POST/DELETE
+ * `/user/interests` never 400s. The API allows only letters, numbers, `.`, `_`
+ * and `-` (uppercased, max 50 chars), so any run of other characters — spaces,
+ * slashes, punctuation — is collapsed to a single hyphen and trimmed off the
+ * ends. Already-valid single-word topics (e.g. "aapl") are unchanged apart from
+ * the uppercasing the server would apply anyway.
+ */
+export function normalizeTopic(raw: string): string {
+  return raw
+    .trim()
+    .toUpperCase()
+    .replace(/[^A-Z0-9._-]+/g, "-")
+    .replace(/^[-._]+|[-._]+$/g, "")
+    .slice(0, 50)
+    .replace(/[-._]+$/g, "");
+}
+
+/** Reduce a topic to bare alphanumerics for tolerant equality checks. */
+function canonicalizeTopic(value: string): string {
+  return value.trim().toLowerCase().replace(/[^a-z0-9]+/g, "");
+}
+
+/**
+ * Check whether a topic id/name is the Global News default. Tolerant of
+ * normalization, so "Global News", "GLOBAL-NEWS" and "global_news" all match.
+ */
 export function isGlobalNews(value: string): boolean {
-  return value.trim().toLowerCase() === GLOBAL_NEWS_TOPIC_NAME.toLowerCase();
+  return canonicalizeTopic(value) === canonicalizeTopic(GLOBAL_NEWS_TOPIC_NAME);
 }
 
 /** A fresh Global News topic in its canonical (subscribed) form. */
@@ -31,13 +57,28 @@ export const initialTopics: Topic[] = [
 
 /**
  * Curated topics surfaced in Discover for any user to subscribe to. Each id is
- * the topic's human-readable name so subscribing persists it verbatim via the
- * interests API (which keys topics by name).
+ * the backend-normalized topic (what the interests API stores and what live
+ * events are tagged with); `name` is the human-readable label shown in the UI.
  */
 export const discoverTopics: Topic[] = [
-  { id: "USA Iran War", name: "USA Iran War", sub: false },
-  { id: "Strait of Hormuz", name: "Strait of Hormuz", sub: false },
+  { id: normalizeTopic("USA Iran War"), name: "USA Iran War", sub: false },
+  { id: normalizeTopic("Strait of Hormuz"), name: "Strait of Hormuz", sub: false },
 ];
+
+/** Normalized-id → display-name map for the curated Discover topics. */
+const DISPLAY_NAMES = new Map<string, string>(
+  discoverTopics.map((t) => [t.id.toLowerCase(), t.name])
+);
+
+/**
+ * The label to show for a topic id. Backend interests come back normalized
+ * (e.g. "USA-IRAN-WAR"); this maps them back to a friendly name when we know
+ * one, and always renders the Global News default by its canonical name.
+ */
+export function displayNameForTopic(id: string): string {
+  if (isGlobalNews(id)) return GLOBAL_NEWS_TOPIC_NAME;
+  return DISPLAY_NAMES.get(id.trim().toLowerCase()) ?? id;
+}
 
 export const items: NewsItem[] = [
   {
