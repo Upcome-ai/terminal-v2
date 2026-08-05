@@ -16,7 +16,7 @@ import {
   items as mockItems,
 } from "@/lib/data";
 import type { NewsItem, Topic } from "@/lib/types";
-import { addInterest, fetchInterests } from "@/lib/api/endpoints";
+import { addInterest, fetchInterests, removeInterest } from "@/lib/api/endpoints";
 import { openEventStream, type StreamStatus } from "@/lib/api/events";
 import { USE_MOCK_FALLBACK } from "@/lib/api/config";
 import { formatRelativeTime } from "@/lib/time";
@@ -205,12 +205,27 @@ export default function Terminal() {
     [usingMock]
   );
 
-  // Remove a topic. The API has no unsubscribe endpoint, so this is a
-  // session-local hide (the topic returns on reload).
-  const removeTopic = useCallback((id: string) => {
-    setTopics((prev) => prev.filter((t) => t.id !== id));
-    setFilter((f) => (f === id ? "all" : f));
-  }, []);
+  // Remove a topic. In live mode this persists via DELETE /user/interests; the
+  // WS reconnects (interestKey changes) to stop streaming the removed topic. In
+  // mock mode it's a session-local hide (the topic returns on reload).
+  const removeTopic = useCallback(
+    async (id: string) => {
+      if (usingMock) {
+        setTopics((prev) => prev.filter((t) => t.id !== id));
+        setFilter((f) => (f === id ? "all" : f));
+        return;
+      }
+
+      try {
+        const res = await removeInterest(id);
+        setTopics(toTopics(res.interests));
+        setFilter((f) => (f === id ? "all" : f));
+      } catch {
+        // 401s are handled globally; other errors leave the list unchanged.
+      }
+    },
+    [usingMock]
+  );
 
   const subscribed = topics; // every interest is, by definition, subscribed
   const subIds = useMemo(() => subscribed.map((t) => t.id), [subscribed]);
