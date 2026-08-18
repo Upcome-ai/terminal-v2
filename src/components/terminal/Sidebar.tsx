@@ -12,6 +12,10 @@ type SidebarProps = {
   onFilterTopic: (id: string) => void;
   onToggleTopic: (id: string) => void;
   onAddTopic: (name: string) => void;
+  /** Generate a last-24-hours report across the subscribed topics. */
+  onGenerateReport: () => void;
+  /** True while a report request is in flight (button shows a busy state). */
+  reportPending: boolean;
 };
 
 export default function Sidebar({
@@ -22,6 +26,8 @@ export default function Sidebar({
   onFilterTopic,
   onToggleTopic,
   onAddTopic,
+  onGenerateReport,
+  reportPending,
 }: SidebarProps) {
   const [adding, setAdding] = useState(false);
   const [draft, setDraft] = useState("");
@@ -53,6 +59,43 @@ export default function Sidebar({
           {subscribed.length} subscribed
         </span>
       </div>
+
+      <button
+        type="button"
+        onClick={onGenerateReport}
+        disabled={subscribed.length === 0 || reportPending}
+        title={
+          subscribed.length === 0
+            ? "Subscribe to a topic to generate a report"
+            : "Generate a report of the last 24 hours across your topics"
+        }
+        className="mb-[14px] flex w-full items-center justify-center gap-[8px] rounded-[9px] border border-[#33261A] bg-[#140F09] px-[12px] py-[9px] font-mono text-[12px] font-medium text-[#F5922E] transition-colors hover:bg-[#1C130A] disabled:cursor-default disabled:opacity-40 disabled:hover:bg-[#140F09]"
+      >
+        {reportPending ? (
+          <>
+            <span className="h-[13px] w-[13px] animate-spin rounded-full border-2 border-[#4A3A24] border-t-[#F5922E]" />
+            Generating…
+          </>
+        ) : (
+          <>
+            <svg
+              aria-hidden
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.9"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="h-[14px] w-[14px]"
+            >
+              <path d="M14 3v4a1 1 0 0 0 1 1h4" />
+              <path d="M17 21H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2Z" />
+              <path d="M9 13h6M9 17h4" />
+            </svg>
+            24-Hour Report
+          </>
+        )}
+      </button>
 
       <div>
         {subscribed.map((t) => {

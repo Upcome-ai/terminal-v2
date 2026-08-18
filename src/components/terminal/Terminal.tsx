@@ -17,7 +17,13 @@ import {
   topicLabel,
 } from "@/lib/data";
 import type { NewsItem, Topic } from "@/lib/types";
-import { addInterest, fetchInterests, removeInterest } from "@/lib/api/endpoints";
+import {
+  addInterest,
+  fetchInterests,
+  generateLast24HoursReport,
+  removeInterest,
+  type Last24HoursReport,
+} from "@/lib/api/endpoints";
 import { openEventStream, type StreamStatus } from "@/lib/api/events";
 import { ApiError } from "@/lib/api/client";
 import { USE_MOCK_FALLBACK, normalizeTopic } from "@/lib/api/config";
@@ -33,6 +39,7 @@ import { useAuth } from "@/lib/auth/AuthContext";
 import TopBar from "./TopBar";
 import Sidebar from "./Sidebar";
 import Feed from "./Feed";
+import ReportModal, { type ReportState } from "./ReportModal";
 import AuthSplash from "@/components/auth/AuthSplash";
 
 type LoadState = "loading" | "ready" | "error";
@@ -64,6 +71,12 @@ export default function Terminal() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [now, setNow] = useState<Date | null>(null);
+
+  // Last-24-hours report modal.
+  const [reportOpen, setReportOpen] = useState(false);
+  const [reportState, setReportState] = useState<ReportState>("loading");
+  const [report, setReport] = useState<Last24HoursReport | null>(null);
+  const [reportError, setReportError] = useState<string | null>(null);
 
   const loadData = useCallback(async () => {
     try {
@@ -286,6 +299,45 @@ export default function Terminal() {
     [topics, removeTopic, addTopic]
   );
 
+  // Generate a report over the rolling 24-hour window for the user's current
+  // interests. The endpoint takes no body — the server reads the subscribed set
+  // — so this always reflects whatever is in "My Topics" right now.
+  const generateReport = useCallback(async () => {
+    if (topics.length === 0) return; // the button is disabled in this case
+
+    setReportOpen(true);
+    setReportState("loading");
+    setReport(null);
+    setReportError(null);
+
+    if (usingMock) {
+      // Offline preview: there's no backend to query, so synthesize a small
+      // report from the sample topics rather than showing a failure.
+      const body = topics
+        .map(
+          (t) =>
+            `- ${t.name}: Sample data — connect a live backend to see real ${t.name} coverage.`
+        )
+        .join("\n");
+      setReport({
+        periodHours: 24,
+        topics: topics.map((t) => t.id),
+        report: body,
+      });
+      setReportState("ready");
+      return;
+    }
+
+    try {
+      const res = await generateLast24HoursReport();
+      setReport(res);
+      setReportState("ready");
+    } catch (error) {
+      setReportError(failureMessage(error, "the report request failed"));
+      setReportState("error");
+    }
+  }, [topics, usingMock]);
+
   const chips = [
     { id: "all", label: "All", active: filter === "all" },
     ...subscribed.map((t) => ({
@@ -405,6 +457,8 @@ export default function Terminal() {
           onFilterTopic={(id) => setFilter((f) => (f === id ? "all" : id))}
           onToggleTopic={toggleTopic}
           onAddTopic={addTopic}
+          onGenerateReport={generateReport}
+          reportPending={reportOpen && reportState === "loading"}
         />
 
         <Feed
@@ -417,6 +471,17 @@ export default function Terminal() {
           onSelect={setSelectedId}
         />
       </div>
+
+      <ReportModal
+        open={reportOpen}
+        state={reportState}
+        report={report}
+        error={reportError}
+        pendingTopics={subIds}
+        topicName={topicName}
+        onClose={() => setReportOpen(false)}
+        onRetry={generateReport}
+      />
     </div>
   );
 }

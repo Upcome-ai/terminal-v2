@@ -101,6 +101,45 @@ export async function removeInterest(topic: string): Promise<InterestsResponse> 
   return mapInterests(response);
 }
 
+/* ─────────────────────────────── reports ───────────────────────────── */
+
+export type Last24HoursReport = {
+  /** Length of the reporting window in hours (24, per the API). */
+  periodHours: number;
+  /** The interests the report covered, in the API's topic format. */
+  topics: string[];
+  /** The report body — a compact, newline-separated summary per topic. */
+  report: string;
+};
+
+/**
+ * `POST /user/reports/last-24-hours` — a compact report of material news from
+ * the rolling 24-hour UTC window across *all* of the authenticated user's saved
+ * interests.
+ *
+ * The request has no body: the server derives the topics from the stored
+ * interest set, so this always reflects whatever the user is currently
+ * subscribed to. Generation can be slow (it searches the web for current
+ * information), so callers should show a pending state while it runs.
+ *
+ * A `400` means the user has no saved interests — surface that as "subscribe to
+ * a topic first" rather than a generic failure.
+ */
+export async function generateLast24HoursReport(): Promise<Last24HoursReport> {
+  const response = await apiFetch<Record<string, unknown>>(
+    ENDPOINTS.last24HoursReport,
+    { method: "POST" }
+  );
+  return {
+    periodHours:
+      typeof response.periodHours === "number" ? response.periodHours : 24,
+    topics: Array.isArray(response.topics)
+      ? (response.topics as unknown[]).map((t) => String(t))
+      : [],
+    report: typeof response.report === "string" ? response.report : "",
+  };
+}
+
 /* ─────────────────────────────── mappers ───────────────────────────── */
 
 function mapInterests(raw: Record<string, unknown>): InterestsResponse {
