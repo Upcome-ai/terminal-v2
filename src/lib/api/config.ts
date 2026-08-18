@@ -22,6 +22,7 @@ export const ENDPOINTS = {
   requestCode: "/auth/login-code", // POST { email }        → 202, emails a code
   createSession: "/auth/session", // POST { email, code }  → 200 { jwt, tokenType }
   interests: "/user/interests", // GET → interests + websocketPath; POST { topic } to add, DELETE { topic } to remove
+  last24HoursReport: "/user/reports/last-24-hours", // POST (no body) → 200 { periodHours, topics, report }
 } as const;
 
 /** Request-body field names. */
