@@ -127,11 +127,12 @@ export default function Terminal() {
     };
   }, []);
 
-  // Subscribed topic ids, as a stable key for the WebSocket effect.
-  const interestKey = useMemo(() => topics.map((t) => t.id).join(","), [topics]);
-
-  // Live event stream. Reconnects whenever the interest set or path changes so
-  // newly added topics start streaming.
+  // Live event stream. Opened once per session (per path) and kept open across
+  // topic changes — adding or removing a topic must NOT tear down the socket.
+  // Interests are persisted server-side by the add/remove calls, and the feed
+  // is filtered client-side by the subscribed set (see `feed` below), so a
+  // removed topic's items stop showing without recycling the connection. The
+  // socket only reconnects on an unexpected drop (handled in openEventStream).
   useEffect(() => {
     if (usingMock || !wsPath) return;
     const close = openEventStream({
@@ -147,9 +148,9 @@ export default function Terminal() {
       },
     });
     return close;
-    // interestKey is intentionally a dependency: adding a topic reopens the
-    // socket so its events are included.
-  }, [wsPath, usingMock, interestKey]);
+    // Intentionally excludes the interest set: topic changes leave the open
+    // socket untouched. Only a new path (or leaving mock mode) reconnects.
+  }, [wsPath, usingMock]);
 
   // Mute preference, read straight from its store (persisted in localStorage,
   // shared across tabs).
@@ -176,8 +177,9 @@ export default function Terminal() {
     return (id: string) => counts.get(id) ?? 0;
   }, [items]);
 
-  // Add a topic. In live mode this persists via POST /user/interests; the WS
-  // reconnects (interestKey changes) to begin streaming the new topic.
+  // Add a topic. In live mode this persists via POST /user/interests; the open
+  // WebSocket is left untouched (the server streams the new topic on the
+  // existing connection).
   const addTopic = useCallback(
     async (rawName: string) => {
       const name = rawName.trim();
@@ -225,8 +227,9 @@ export default function Terminal() {
   );
 
   // Remove a topic. In live mode this persists via DELETE /user/interests; the
-  // WS reconnects (interestKey changes) to stop streaming the removed topic. In
-  // mock mode it's a session-local hide (the topic returns on reload).
+  // open WebSocket is left untouched — the removed topic drops out of the feed
+  // because it's filtered by the subscribed set, not the socket. In mock mode
+  // it's a session-local hide (the topic returns on reload).
   const removeTopic = useCallback(
     async (id: string) => {
       if (usingMock) {
