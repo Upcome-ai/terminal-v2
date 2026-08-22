@@ -1,5 +1,5 @@
 /**
- * Typed API calls, matched to the Upcome Auth API doc.
+ * Typed API calls, matched to the Wealth Frame Auth API doc.
  *
  * Auth is passwordless (email code → JWT). User data is modelled as "interests"
  * (topic strings); live news arrives over a WebSocket (see `events.ts`).

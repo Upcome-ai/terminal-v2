@@ -230,13 +230,13 @@ function LoginForm() {
 const labelClass =
   "font-mono text-[10.5px] tracking-[.2em] uppercase text-[#5C5C63]";
 
-/** Bordered console panel with the Upcome wordmark header. */
+/** Bordered console panel with the Wealth Frame wordmark header. */
 function TerminalCard({ children }: { children: ReactNode }) {
   return (
     <div className="border border-[#1E1E23] bg-[#0C0C0E]">
       <div className="flex items-center justify-between gap-4 border-b border-[#1E1E23] px-[20px] py-[16px]">
         <span className="font-mono font-semibold text-[15px] tracking-[.22em] text-[#F5922E]">
-          UPCOME
+          WEALTH FRAME
         </span>
         <span className="font-mono text-[10px] tracking-[.2em] uppercase text-[#5C5C63]">
           Secure terminal

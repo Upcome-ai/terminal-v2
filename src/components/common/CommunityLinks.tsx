@@ -50,7 +50,7 @@ function CommunityLink({ href, label, icon }: CommunityLinkProps) {
   );
 }
 
-/** Discord + Telegram community links, styled for the Upcome terminal. */
+/** Discord + Telegram community links, styled for the Wealth Frame terminal. */
 export default function CommunityLinks({
   className = "",
   heading,
