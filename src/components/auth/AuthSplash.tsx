@@ -6,7 +6,7 @@ export default function AuthSplash({ label = "Loading terminal…" }: { label?: 
     <div className="h-screen flex flex-col items-center justify-center gap-4 bg-[#08080A] text-[#ECECEA]">
       <Image
         src="/upcome-mark.svg"
-        alt="Upcome"
+        alt="Wealth Frame"
         width={40}
         height={40}
         className="h-10 w-10 animate-upblink"

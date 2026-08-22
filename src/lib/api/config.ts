@@ -1,6 +1,6 @@
 /**
  * ─────────────────────────────────────────────────────────────────────────────
- *  API CONFIGURATION — matched to the Upcome Auth API doc.
+ *  API CONFIGURATION — matched to the Wealth Frame Auth API doc.
  * ─────────────────────────────────────────────────────────────────────────────
  *
  *  The default is the hosted backend. Override it in one place via the
