@@ -1,5 +1,5 @@
 /**
- * Thin fetch wrapper for the Wealth Frame backend.
+ * Thin fetch wrapper for the Upcome backend.
  *
  * Responsibilities:
  *  - Prefix requests with the configured API base URL.
