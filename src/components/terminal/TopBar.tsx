@@ -33,12 +33,12 @@ export default function TopBar({
       <div className="flex items-center gap-[9px] w-[258px] shrink-0">
         <Image
           src="/upcome-mark.svg"
-          alt="Wealth Frame"
+          alt="Upcome"
           width={24}
           height={24}
           className="block h-6 w-6"
         />
-        <span className="font-semibold text-[19px] tracking-[-.02em]">Wealth Frame</span>
+        <span className="font-semibold text-[19px] tracking-[-.02em]">Upcome</span>
         <span className="font-mono text-[10px] tracking-[.16em] text-[#5C5C63] border border-[#1E1E23] px-[6px] py-[3px] rounded-[5px] ml-[2px]">
           TERMINAL
         </span>

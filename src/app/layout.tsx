@@ -16,9 +16,9 @@ const ibmPlexMono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Wealth Frame Terminal",
+  title: "Upcome Terminal",
   description:
-    "Wealth Frame Terminal — real-time news and events for traders. Know what moves the world before it moves the market.",
+    "Upcome Terminal — real-time news and events for traders. Know what moves the world before it moves the market.",
 };
 
 export default function RootLayout({
